@@ -27,6 +27,7 @@ pip install -r requirements.txt
 ```
 
 
+
 # Použití
 
 Spusťte skript s dvěma argumenty:
