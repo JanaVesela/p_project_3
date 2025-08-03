@@ -26,42 +26,44 @@ def validate_arguments(args):
 
 
 def get_links(url):
-    response = requests.get(url) #stáhne stránku
+    response = requests.get(url)
     soup = bs(response.text, 'html.parser')
     data = []
 
-    rows = soup.findAll('tr') #najde všechny řádky v tabulce (každá obec = 1 řádek)
+    rows = soup.findAll('tr') 
     for row in rows:
-        cislo_obce = row.find('td', class_='cislo') # hledám první sloupec = číslo obce 
-        nazev_obce = row.find('td', class_='overflow_name') # hledám druhý sloupec = název obce
+        cislo_obce = row.find('td', class_='cislo')
+        nazev_obce = row.find('td', class_='overflow_name')
 
 
         if cislo_obce and nazev_obce:
             link = cislo_obce.find('a')
-            if link:  # Pokud odkaz existuje
-                kod = link.text.strip()  # Získáme text odkazu (kód obce)
-                odkaz = "https://www.volby.cz/pls/ps2017nss/" + link['href']  # Sestavíme plný odkaz
+            if link: 
+                kod = link.text.strip() 
+                odkaz = "https://www.volby.cz/pls/ps2017nss/" + link['href'] 
             else:
-                kod = ''  # Pokud odkaz není, použijeme prázdný řetězec
+                kod = '' 
                 odkaz = ''
 
-            jmeno = nazev_obce.text.strip()  # Získáme název obce
-            data.append({"code": kod, "name": jmeno, "link": odkaz})  # Přidáme data do seznamu
+            jmeno = nazev_obce.text.strip()  
+            data.append({"code": kod, "name": jmeno, "link": odkaz})  
 
     return data
 
-def get_results_from_village(url):
+def get_results_from_village(url, kod_obce_z_odkazu):
     response = requests.get(url)
     soup = bs(response.text, 'html.parser')
 
-    # základní info o obci
-    kod_obce = soup.find('td', headers='sa1').text.strip()
-    nazev_obce = soup.find('td', headers='sa2').text.strip()
-    volici = soup.find('td', headers='sa3').text.strip().replace('\xa0', '')
-    obalky = soup.find('td', headers='sa5').text.strip().replace('\xa0', '')
+    nazev_element = soup.find("h3")
+    if nazev_element:
+        nazev_obce = nazev_element.text.strip().split(":")[-1].strip()
+    else:
+        nazev_obce = "Neznámá obec"
+
+    volici = soup.find('td', headers='sa2').text.strip().replace('\xa0', '')
+    obalky = soup.find('td', headers='sa3').text.strip().replace('\xa0', '')
     platne = soup.find('td', headers='sa6').text.strip().replace('\xa0', '')
 
-    # výsledky pro strany
     vysledky = {}
     for tabulka in soup.find_all('div', class_='t2_470'):
         for radek in tabulka.find_all('tr')[2:]:
@@ -72,13 +74,15 @@ def get_results_from_village(url):
                 vysledky[strana] = hlasy
 
     return {
-        "kod": kod_obce,
+        "kod": kod_obce_z_odkazu,
         "nazev": nazev_obce,
         "volici": volici,
         "obalky": obalky,
         "platne": platne,
         "hlasy": vysledky
     }
+
+
 def save_to_csv(data, parties, filename):
     hlavicka = ["kód obce", "název obce", "voliči v seznamu", "vydané obálky", "platné hlasy"] + parties
 
@@ -109,9 +113,11 @@ if __name__ == "__main__":
     vsechny_strany = set()
 
     for obec in obce:
-        obec_vysledky = get_results_from_village(obec["link"])
+        obec_vysledky = get_results_from_village(obec["link"], obec["code"])
         vysledky.append(obec_vysledky)
         vsechny_strany.update(obec_vysledky["hlasy"].keys())
     serazene_strany = sorted(vsechny_strany)
+    print("✅ Ukázka výsledku před uložením do CSV:")
+    print(vysledky[0]) 
     save_to_csv(vysledky, serazene_strany, output_file)
     print(f"✅ Výsledky uloženy do {output_file}")
