@@ -30,7 +30,7 @@ def get_links(url):
     soup = bs(response.text, 'html.parser')
     data = []
 
-    rows = soup.findAll('tr') 
+    rows = soup.find_all('tr') 
     for row in rows:
         cislo_obce = row.find('td', class_='cislo')
         nazev_obce = row.find('td', class_='overflow_name')
@@ -50,7 +50,7 @@ def get_links(url):
 
     return data
 
-def get_results_from_village(url, kod_obce_z_odkazu):
+def get_results_from_village(url, kod_obce_z_odkazu, nazev_obce):
     response = requests.get(url)
     soup = bs(response.text, 'html.parser')
 
@@ -108,6 +108,7 @@ if __name__ == "__main__":
     url = sys.argv[1]
     output_file = sys.argv[2]
 
+    obec_vysledky = get_results_from_village(obec["link"], obec["code"], obec["name"])
     obce = get_links(url)
     vysledky = []
     vsechny_strany = set()
