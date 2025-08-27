@@ -108,15 +108,15 @@ if __name__ == "__main__":
     url = sys.argv[1]
     output_file = sys.argv[2]
 
-    obec_vysledky = get_results_from_village(obec["link"], obec["code"], obec["name"])
     obce = get_links(url)
     vysledky = []
     vsechny_strany = set()
 
     for obec in obce:
-        obec_vysledky = get_results_from_village(obec["link"], obec["code"])
+        obec_vysledky = get_results_from_village(obec["link"], obec["code"], obec["name"])
         vysledky.append(obec_vysledky)
         vsechny_strany.update(obec_vysledky["hlasy"].keys())
+
     serazene_strany = sorted(vsechny_strany)
     print("✅ Ukázka výsledku před uložením do CSV:")
     print(vysledky[0]) 
